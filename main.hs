@@ -25,16 +25,20 @@ spaces :: Parser ()
 spaces = skipMany1 space
 
 
-parseStringQuote :: Parser Char
-parseStringQuote = do 
+parseStringEscape :: Parser Char
+parseStringEscape = do 
   char '\\'
-  char '\"'
-  return '\"'
-
+  c <- oneOf "\"\\trn"
+  case c of
+    't'  -> return '\t'
+    'r'  -> return '\r'
+    'n'  -> return '\n' 
+    x    -> return x
+  
 parseString :: Parser LispVal
 parseString = do
   char '"'
-  x <- many (parseStringQuote <|> noneOf "\"")
+  x <- many (parseStringEscape <|> noneOf "\"")
   char '"'
   return $ String x
 
