@@ -25,15 +25,22 @@ spaces :: Parser ()
 spaces = skipMany1 space
 
 
+parseStringQuote :: Parser Char
+parseStringQuote = do 
+  char '\\'
+  char '\"'
+  return '\"'
+
 parseString :: Parser LispVal
 parseString = do
   char '"'
-  x <- many (noneOf "\"")
+  x <- many (parseStringQuote <|> noneOf "\"")
   char '"'
   return $ String x
 
 parseNumber :: Parser LispVal
 parseNumber = liftM (Number . read) $ many1 digit
+
 
 parseAtom :: Parser LispVal
 parseAtom = do
@@ -60,7 +67,7 @@ readExpr input =
 
 main :: IO ()
 main = do
-  (expr:_) <- getArgs
+  expr <- getLine
   putStrLn $ "Source: " ++ expr
   putStrLn $ readExpr expr
 
