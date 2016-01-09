@@ -1,6 +1,7 @@
 import Text.ParserCombinators.Parsec hiding (spaces)
 import System.Environment
 import Control.Monad
+import Numeric
 
 -- data ParsecT s u m a
 -- s - stream type
@@ -16,6 +17,7 @@ data LispVal = Atom String
              | Number Integer
              | String String
              | Bool Bool
+             | Char Char
              deriving Show
 
 symbol :: Parser Char
@@ -42,24 +44,45 @@ parseString = do
   char '"'
   return $ String x
 
-parseNumber :: Parser LispVal
-parseNumber = liftM (Number . read) $ many1 digit
+parseDecNumber :: Parser LispVal
+parseDecNumber = liftM (Number . read) $ many1 digit
 
+parseHexNumber :: Parser LispVal
+parseHexNumber = liftM (Number . fst. head . readHex) $ many1 hexDigit
+
+parseOctNumber :: Parser LispVal
+parseOctNumber = liftM (Number . fst. head . readOct) $ many1 octDigit
+
+parseAtomSimple :: [Char] -> Parser LispVal
+parseAtomSimple h = do
+  rest <- many (letter <|> digit <|> symbol)
+  let atom = h ++ rest
+  return $ Atom atom
+
+parseAtomExt :: Parser LispVal
+parseAtomExt = do
+  c <- letter <|> digit <|> symbol 
+  case c of
+    't' -> return $ Bool True
+    'f' -> return $ Bool False  
+    'd' -> parseDecNumber
+    'x' -> parseHexNumber
+    'o' -> parseOctNumber
+    x   -> parseAtomSimple ['#', x]
 
 parseAtom :: Parser LispVal
 parseAtom = do
   first <- letter <|> symbol
-  rest <- many (letter <|> digit <|> symbol)
-  let atom = first:rest
-  return $ case atom of
-    "#t" -> Bool True
-    "#f" -> Bool False
-    _    -> Atom atom
+  if first == '#' then
+    parseAtomExt 
+  else   
+    parseAtomSimple [first]
 
 parseExpr :: Parser LispVal
 parseExpr = parseAtom
         <|> parseString
-        <|> parseNumber
+        <|> parseDecNumber
+
 
 
 readExpr :: String -> String
