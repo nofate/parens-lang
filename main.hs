@@ -53,6 +53,7 @@ parseHexNumber = liftM (Number . fst. head . readHex) $ many1 hexDigit
 parseOctNumber :: Parser LispVal
 parseOctNumber = liftM (Number . fst. head . readOct) $ many1 octDigit
 
+
 parseAtomSimple :: [Char] -> Parser LispVal
 parseAtomSimple h = do
   rest <- many (letter <|> digit <|> symbol)
@@ -78,12 +79,30 @@ parseAtom = do
   else   
     parseAtomSimple [first]
 
+parseList :: Parser LispVal
+parseList = liftM List $ sepBy parseExpr spaces
+
+parseDottedList :: Parser LispVal
+parseDottedList = do
+  x <- endBy parseExpr spaces
+  xs <- char '.' >> spaces >> parseExpr
+  return $ DottedList x xs
+
+parseQuoted :: Parser LispVal
+parseQuoted = do
+  char '\''
+  x <- parseExpr
+  return $ List [Atom "quote", x]
+
 parseExpr :: Parser LispVal
 parseExpr = parseAtom
         <|> parseString
         <|> parseDecNumber
-
-
+        <|> parseQuoted
+        <|> do char '('
+               x <- try parseList <|> parseDottedList
+               char ')'
+               return x 
 
 readExpr :: String -> String
 readExpr input =
