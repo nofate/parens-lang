@@ -18,7 +18,22 @@ data LispVal = Atom String
              | String String
              | Bool Bool
              | Char Char
-             deriving Show
+
+instance Show LispVal where
+  show = showVal
+
+unwordsList :: [LispVal] -> String
+unwordsList = unwords . map showVal
+
+showVal :: LispVal -> String
+showVal (Atom a) = a
+showVal (List xs) = "(" ++ unwordsList xs ++ ")"
+showVal (DottedList xs x) = "(" ++ unwordsList xs ++ "." ++ showVal x ++ ")"
+showVal (Number n) = show n
+showVal (String s) = "\"" ++ s ++ "\""
+showVal (Bool True) = "#t"
+showVal (Bool False) = "#f"
+showVal (Char c) = "#\\" ++ [c]
 
 symbol :: Parser Char
 symbol = oneOf "!#$%&|*+-/:<=>?@^_~"
@@ -109,6 +124,7 @@ readExpr input =
   case parse parseExpr "source" input of
     Left err -> "No match: " ++ show err
     Right val -> "Found value: " ++ show val 
+
 
 
 main :: IO ()
