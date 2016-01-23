@@ -136,14 +136,41 @@ unpackNum (String n) =
 unpackNum (List [n]) = unpackNum n
 unpackNum _ = 0
 
+isString :: [LispVal] -> LispVal
+isString [String _] = Bool True
+isString (_:_) = Bool False
+
+isList:: [LispVal] -> LispVal
+isList [List _] = Bool True
+isList (_:_) = Bool False
+
+isAtom :: [LispVal] -> LispVal
+isAtom [Atom _] = Bool True
+isAtom (_:_) = Bool False
+
+isNumber :: [LispVal] -> LispVal
+isNumber [Number _] = Bool True
+isNumber (_:_) = Bool False
+
+isPair :: [LispVal] -> LispVal
+isPair [DottedList _ _] = Bool True
+isPair (_:_) = Bool False
+
 primitives :: [(String, [LispVal] -> LispVal)]
-primitives = [("+", numericBinop (+)),
+primitives = [-- Arithmetics
+              ("+", numericBinop (+)),
               ("*", numericBinop (-)),
               ("*", numericBinop (*)),
               ("/", numericBinop div),
               ("mod", numericBinop mod),
               ("quotient", numericBinop quot),
-              ("remainder", numericBinop rem)]
+              ("remainder", numericBinop rem),
+              -- Types
+              ("string?", isString),
+              ("list?", isList),
+              ("pair?", isPair),
+              ("number?", isNumber),
+              ("symbol?", isAtom)]
 
 apply :: String -> [LispVal] -> LispVal
 apply func args = 
